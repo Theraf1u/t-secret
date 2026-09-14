@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="assets/banner.png" alt="T-Secret — self-hosted one-time secret bot for Telegram" width="100%">
+</p>
+
 # 🔒 T-Secret
 
 **Self-hosted Telegram-бот для одноразовой передачи секретов** — текстов, паролей, файлов и токенов. Полный аналог OneTimeSecret / Privnote, живущий у вас на сервере: без сторонних сервисов, со сквозным шифрованием и криптографически необратимым удалением после прочтения.
