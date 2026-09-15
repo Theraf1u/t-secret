@@ -29,8 +29,7 @@ def my_secrets_menu() -> InlineKeyboardMarkup:
 
 def more_menu() -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup(inline_keyboard=[
-        [InlineKeyboardButton(text="🛡 Безопасность", callback_data="security"),
-         InlineKeyboardButton(text="ℹ️ О сервисе", callback_data="about")],
+        [InlineKeyboardButton(text="🛡 О сервисе и безопасности", callback_data="about")],
         [InlineKeyboardButton(text="❓ Как пользоваться", callback_data="help")],
         [InlineKeyboardButton(text="⬅️ На главную", callback_data="menu")],
     ])

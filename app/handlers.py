@@ -193,7 +193,19 @@ def build_router(settings: Settings, db: Database, cipher: SecretCipher, redis: 
 
     @router.callback_query(F.data == "help")
     async def help_callback(event: CallbackQuery) -> None:
-        await safe_edit(event, "❓ <b>Как пользоваться</b>\n\n1. Создайте секрет.\n2. Выберите срок и число просмотров.\n3. Отправьте готовую ссылку получателю.\n\nПосле уничтожения содержимое восстановить нельзя.", more_menu())
+        await safe_edit(event,
+            "❓ <b>Как пользоваться</b>\n\n"
+            "<b>Отправить секрет:</b>\n"
+            "1️⃣ ➕ «Создать секрет» → выберите тип: 📝 текст, 📎 файл или 🎲 сразу сгенерировать пароль, PIN, токен или UUID.\n"
+            "2️⃣ Задайте срок жизни (от 5 минут до 7 дней или «до открытия») и лимит просмотров.\n"
+            "3️⃣ При желании включите защиту: PIN-код на открытие, привязку к конкретному Telegram-получателю или уведомление о факте открытия.\n"
+            "4️⃣ Получите ссылку и отправьте её адресату любым способом — хоть через другой мессенджер.\n\n"
+            "<b>Получить секрет от кого-то:</b>\n"
+            "📥 «Запросить» создаёт ссылку-приглашение — по ней собеседник сам заполнит секрет в ответ вам, ничего создавать заранее не нужно.\n\n"
+            "<b>После отправки:</b>\n"
+            "📂 «Мои секреты» показывает, что ещё активно, а 🚨 «Экстренное удаление» мгновенно уничтожает секрет, даже если его не открыли.\n\n"
+            "Секрет открывается ровно заданное число раз или до истечения срока — что наступит раньше, то и сработает. После этого восстановить содержимое нельзя.",
+            more_menu())
 
     @router.callback_query(F.data == "my:secrets")
     async def my_secrets(event: CallbackQuery) -> None:
@@ -205,7 +217,7 @@ def build_router(settings: Settings, db: Database, cipher: SecretCipher, redis: 
 
     @router.callback_query(F.data == "more")
     async def more(event: CallbackQuery) -> None:
-        await safe_edit(event, "••• <b>Ещё</b>\n\nСправка и управление безопасностью.", more_menu())
+        await safe_edit(event, "••• <b>Ещё</b>\n\nСправка, техническая сторона безопасности и ссылка на исходный код.", more_menu())
 
     @router.callback_query(F.data == "menu")
     async def menu_callback(event: CallbackQuery, state: FSMContext) -> None:
@@ -1126,17 +1138,26 @@ def build_router(settings: Settings, db: Database, cipher: SecretCipher, redis: 
     async def settings_page(event: CallbackQuery) -> None:
         await safe_edit(event, "⚙️ <b>Настройки</b>\n\nЗначения по умолчанию: 24 часа и один просмотр. Расширенные персональные настройки появятся на следующем этапе.", back_menu())
 
-    @router.callback_query(F.data == "security")
-    async def security_page(event: CallbackQuery) -> None:
+    @router.callback_query(F.data == "about")
+    async def about(event: CallbackQuery) -> None:
         b = InlineKeyboardBuilder()
         b.button(text="🚨 Экстренное удаление", callback_data="panic")
         b.button(text="⬅️ Назад", callback_data="more")
         b.adjust(1)
-        await safe_edit(event, "🛡 <b>Безопасность</b>\n\nAES-256-GCM · Argon2id · SHA-256 token lookup\n"
-                        "PIN anti-bruteforce · PostgreSQL row locking · metadata-only audit", b.as_markup())
-
-    @router.callback_query(F.data == "about")
-    async def about(event: CallbackQuery) -> None:
-        await safe_edit(event, "ℹ️ <b>О T-Secret</b>\n\nСекреты шифруются AES-256-GCM. После истечения срока или последнего просмотра зашифрованные данные и материал ссылки удаляются.", more_menu())
+        await safe_edit(event,
+            "🛡 <b>О сервисе и безопасности</b>\n\n"
+            "T-Secret — self-hosted бот для одноразовой передачи секретов: текста, файлов и паролей. "
+            "Каждый секрет живёт ровно один раз и после этого исчезает без возможности восстановления.\n\n"
+            "<b>Как это устроено технически:</b>\n"
+            "🔐 Содержимое шифруется <b>AES-256-GCM</b> до записи в базу — на диске и в бэкапах лежит только шифротекст.\n"
+            "🔑 PIN хранится как <b>Argon2id</b>-хэш, с анти-брутфорсом и временной блокировкой после нескольких неверных попыток.\n"
+            "🔎 Ссылка ищется по <b>SHA-256</b>-хэшу токена, а не по самому токену.\n"
+            "🔒 Одновременное открытие сериализуется блокировкой строки в PostgreSQL — прочитать один секрет дважды параллельно нельзя.\n"
+            "🧨 После просмотра или истечения срока содержимое, PIN-хэш и служебные данные удаляются безвозвратно — их не восстановит даже владелец бота.\n"
+            "📋 В админ-панели ведётся только metadata-only журнал: кто и когда создал или открыл секрет, но не что внутри.\n\n"
+            "Код открыт, можно проверить самостоятельно:\n"
+            "🔗 <a href=\"https://github.com/Theraf1u/t-secret\">github.com/Theraf1u/t-secret</a>\n\n"
+            "⚠️ Важно: Telegram уже получает исходное сообщение до того, как бот его удалит — эти гарантии касаются только инфраструктуры T-Secret.",
+            b.as_markup())
 
     return router
