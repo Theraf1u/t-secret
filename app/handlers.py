@@ -908,12 +908,11 @@ def build_router(settings: Settings, db: Database, cipher: SecretCipher, redis: 
                 await message.answer(f"⚠️ Неверный PIN. Осталось попыток: {remaining_attempts}.\n\nВведите PIN:")
             return
         await limiter.clear_pin_failures(str(secret_id), message.from_user.id)
-        await redis.setex(f"pin_grant:{secret_id}:{message.from_user.id}", 300, "1")
         await state.clear()
         if secret.require_identity_confirmation:
+            await redis.setex(f"pin_grant:{secret_id}:{message.from_user.id}", 300, "1")
             await request_confirmation(bot, message.from_user.id, secret_id)
             return
-        await redis.delete(f"pin_grant:{secret_id}:{message.from_user.id}")
         denial = await deliver_secret(bot, message.from_user.id, secret_id)
         if denial:
             await message.answer("⛔ Доступ запрещён.")

@@ -9,7 +9,7 @@ from aiogram.enums import ParseMode
 from redis.asyncio import Redis
 
 from app.config import get_settings
-from app.core.logging import install_sensitive_filter
+from app.core.logging import install_sensitive_filter, redact_event_dict
 from app.crypto import SecretCipher
 from app.db import Database
 from app.file_store import EncryptedFileStore
@@ -20,7 +20,12 @@ async def main() -> None:
     settings = get_settings()
     logging.basicConfig(level=settings.log_level, format="%(message)s")
     install_sensitive_filter()
-    structlog.configure(processors=[structlog.processors.TimeStamper(fmt="iso"), structlog.processors.JSONRenderer()])
+    structlog.configure(processors=[
+        structlog.processors.TimeStamper(fmt="iso"),
+        structlog.processors.format_exc_info,
+        redact_event_dict,
+        structlog.processors.JSONRenderer(),
+    ])
     db = Database(settings.database_url)
     redis = Redis.from_url(settings.redis_url)
     cipher = SecretCipher(settings.master_key.get_secret_value())

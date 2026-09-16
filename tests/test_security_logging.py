@@ -1,7 +1,7 @@
 import logging
 
 from app.audit import safe_metadata
-from app.core.logging import SensitiveDataFilter, redact
+from app.core.logging import SensitiveDataFilter, redact, redact_event_dict
 
 
 def test_sensitive_values_are_redacted() -> None:
@@ -17,4 +17,22 @@ def test_audit_metadata_is_allowlisted() -> None:
     result = safe_metadata({"reason": "manual", "count": 2, "secret_content": "never",
                             "pin": "482913", "filename": "secret.env", "token": "raw"})
     assert result == {"reason": "manual", "count": 2}
+
+
+def test_redact_event_dict_covers_structlog_pipeline() -> None:
+    # structlog does not route through stdlib logging.Filter by default, so the
+    # structured-logging pipeline needs its own redaction pass independent of
+    # SensitiveDataFilter (see app.main / app.worker_main structlog.configure).
+    event = redact_event_dict(None, "info", {
+        "event": "leak_test",
+        "token": "raw-value-that-has-no-recognizable-pattern",
+        "master_key": "another-raw-value",
+        "exception": "Traceback ...\nValueError: token=123456789:ABCDEFGHIJKLMNOPQRSTUVWXYZ_abcdefghi12345",
+        "count": 3,
+    })
+    assert event["token"] == "<redacted>"
+    assert event["master_key"] == "<redacted>"
+    assert "123456789:ABCDEFGHIJKLMNOPQRSTUVWXYZ_abcdefghi12345" not in event["exception"]
+    assert event["count"] == 3
+    assert event["event"] == "leak_test"
 
